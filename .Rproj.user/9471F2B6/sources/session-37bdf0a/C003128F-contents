@@ -1,0 +1,52 @@
+---
+title: "FBI Crime Stats"
+author: "Bob Dwyer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(janitor)
+library(here)
+library(readxl)
+```
+
+```{r import data}
+crimedata <- read_xlsx(here("data/Data Tables/Table_6_Crime_in_the_United_States_by_Metropolitan_Statistical_Area_2019.xlsx"), skip = 3)
+
+#clean names
+clean_crime_data <- crimedata %>%
+  clean_names()
+```
+
+```{r data cleaning}
+contenders <- clean_crime_data %>%
+  filter(metropolitan_statistical_area %in% c("Durham-Chapel Hill, NC M.S.A.", "Madison, WI M.S.A.")) %>%
+  select(-population) 
+  
+  
+# Pivot longer
+contenders_long <- contenders %>%
+  pivot_longer(
+    cols = 3:11,  # Columns to pivot
+    names_to = "crime_type",       # New column for measurement type
+    values_to = "value"                  # New column for measurement value
+  )
+```
+
+```{r rate per 100K}
+contenders_long %>%
+  filter(counties_principal_cities == "Rate per 100,000 inhabitants") %>%
+  ggplot(aes(x = crime_type, y = value)) +
+  geom_col() +
+  coord_flip() +
+  facet_wrap(~ metropolitan_statistical_area) +
+  
+#styleize figure
+  theme_minimal() +
+  labs(
+    y = "Number of crimes per 100k population",
+    x = "Crime Type"
+  )
+```
